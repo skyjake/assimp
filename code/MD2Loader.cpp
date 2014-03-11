@@ -246,6 +246,9 @@ void MD2Importer::InternReadFile( const std::string& pFile,
 
 	pcFrame += configFrameID;
 
+	// name the mesh using the frame name
+	pcMesh->mName.Set(pcFrame->name);
+
 	// navigate to the begin of the triangle data
 	MD2::Triangle* pcTriangles = (MD2::Triangle*) ((uint8_t*)
 		m_pcHeader + m_pcHeader->offsetTriangles);
