@@ -39,7 +39,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ---------------------------------------------------------------------------
 */
 
-
 #ifndef ASSIMP_BUILD_NO_MD2_IMPORTER
 
 /** @file Implementation of the MD2 importer class */
@@ -259,12 +258,22 @@ void MD2Importer::InternReadFile( const std::string& pFile,
 
     // there won't be more than one mesh inside the file
     pScene->mNumMaterials = 1;
+    
+    // if more than one skin is defined, they are stored as individual materials
+    if (m_pcHeader->numTexCoords && m_pcHeader->numSkins)
+    {
+        pScene->mNumMaterials = m_pcHeader->numSkins;
+    }
+    
     pScene->mRootNode = new aiNode();
     pScene->mRootNode->mNumMeshes = 1;
     pScene->mRootNode->mMeshes = new unsigned int[1];
     pScene->mRootNode->mMeshes[0] = 0;
-    pScene->mMaterials = new aiMaterial*[1];
-    pScene->mMaterials[0] = new aiMaterial();
+    pScene->mMaterials = new aiMaterial*[pScene->mNumMaterials];
+    for (uint32_t i = 0; i < pScene->mNumMaterials; ++i)
+    {
+        pScene->mMaterials[i] = new aiMaterial();       
+    }
     pScene->mNumMeshes = 1;
     pScene->mMeshes = new aiMesh*[1];
 
@@ -276,6 +285,9 @@ void MD2Importer::InternReadFile( const std::string& pFile,
         m_pcHeader + m_pcHeader->offsetFrames);
 
     pcFrame += configFrameID;
+
+    // name the mesh using the frame name
+    pcMesh->mName.Set(pcFrame->name);
 
     // navigate to the begin of the triangle data
     MD2::Triangle* pcTriangles = (MD2::Triangle*) ((uint8_t*)
@@ -321,39 +333,47 @@ void MD2Importer::InternReadFile( const std::string& pFile,
     // Not sure whether there are MD2 files without texture coordinates
     // NOTE: texture coordinates can be there without a texture,
     // but a texture can't be there without a valid UV channel
-    aiMaterial* pcHelper = (aiMaterial*)pScene->mMaterials[0];
-    const int iMode = (int)aiShadingMode_Gouraud;
-    pcHelper->AddProperty<int>(&iMode, 1, AI_MATKEY_SHADING_MODEL);
 
     if (m_pcHeader->numTexCoords && m_pcHeader->numSkins)
     {
-        // navigate to the first texture associated with the mesh
-        const MD2::Skin* pcSkins = (const MD2::Skin*) ((unsigned char*)m_pcHeader +
-            m_pcHeader->offsetSkins);
-
-        aiColor3D clr;
-        clr.b = clr.g = clr.r = 1.0f;
-        pcHelper->AddProperty<aiColor3D>(&clr, 1,AI_MATKEY_COLOR_DIFFUSE);
-        pcHelper->AddProperty<aiColor3D>(&clr, 1,AI_MATKEY_COLOR_SPECULAR);
-
-        clr.b = clr.g = clr.r = 0.05f;
-        pcHelper->AddProperty<aiColor3D>(&clr, 1,AI_MATKEY_COLOR_AMBIENT);
-
-        if (pcSkins->name[0])
+        // add all skins as diffuse textures to the material
+        for (uint32_t skinIdx = 0; skinIdx < m_pcHeader->numSkins; ++skinIdx)
         {
-            aiString szString;
-            const size_t iLen = ::strlen(pcSkins->name);
-            ::memcpy(szString.data,pcSkins->name,iLen);
-            szString.data[iLen] = '\0';
-            szString.length = iLen;
+            const MD2::Skin* pcSkins = (const MD2::Skin*) ((unsigned char*)m_pcHeader +
+                    m_pcHeader->offsetSkins + sizeof(MD2::Skin) * skinIdx);
 
-            pcHelper->AddProperty(&szString,AI_MATKEY_TEXTURE_DIFFUSE(0));
-        }
-        else{
-            DefaultLogger::get()->warn("Texture file name has zero length. It will be skipped.");
+            aiMaterial* pcHelper = (aiMaterial*)pScene->mMaterials[skinIdx];
+            const int iMode = (int)aiShadingMode_Gouraud;
+            pcHelper->AddProperty<int>(&iMode, 1, AI_MATKEY_SHADING_MODEL);
+
+            aiColor3D clr;
+            clr.b = clr.g = clr.r = 1.0f;
+            pcHelper->AddProperty<aiColor3D>(&clr, 1,AI_MATKEY_COLOR_DIFFUSE);
+            pcHelper->AddProperty<aiColor3D>(&clr, 1,AI_MATKEY_COLOR_SPECULAR);
+
+            clr.b = clr.g = clr.r = 0.05f;
+            pcHelper->AddProperty<aiColor3D>(&clr, 1,AI_MATKEY_COLOR_AMBIENT);
+
+            if (pcSkins->name[0])
+            {
+                aiString szString;
+                const size_t iLen = ::strlen(pcSkins->name);
+                ::memcpy(szString.data,pcSkins->name,iLen);
+                szString.data[iLen] = '\0';
+                szString.length = iLen;
+
+                pcHelper->AddProperty(&szString,AI_MATKEY_TEXTURE_DIFFUSE(0));
+            }
+            else{
+                DefaultLogger::get()->warn("Texture file name has zero length. It will be skipped.");
+            }
         }
     }
-    else    {
+    else {
+        aiMaterial* pcHelper = (aiMaterial*)pScene->mMaterials[0];
+        const int iMode = (int)aiShadingMode_Gouraud;
+        pcHelper->AddProperty<int>(&iMode, 1, AI_MATKEY_SHADING_MODEL);
+
         // apply a default material
         aiColor3D clr;
         clr.b = clr.g = clr.r = 0.6f;
@@ -374,7 +394,6 @@ void MD2Importer::InternReadFile( const std::string& pFile,
         sz.Set("$texture_dummy.bmp");
         pcHelper->AddProperty(&sz,AI_MATKEY_TEXTURE_DIFFUSE(0));
     }
-
 
     // now read all triangles of the first frame, apply scaling and translation
     unsigned int iCurrent = 0;
