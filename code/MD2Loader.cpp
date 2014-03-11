@@ -39,7 +39,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ---------------------------------------------------------------------------
 */
 
-
 #ifndef ASSIMP_BUILD_NO_MD2_IMPORTER
 
 /** @file Implementation of the MD2 importer class */
@@ -257,6 +256,9 @@ void MD2Importer::InternReadFile( const std::string& pFile,
 
     pcFrame += configFrameID;
 
+    // name the mesh using the frame name
+    pcMesh->mName.Set(pcFrame->name);
+
     // navigate to the begin of the triangle data
     MD2::Triangle* pcTriangles = (MD2::Triangle*) ((uint8_t*)
         m_pcHeader + m_pcHeader->offsetTriangles);
@@ -333,7 +335,7 @@ void MD2Importer::InternReadFile( const std::string& pFile,
             DefaultLogger::get()->warn("Texture file name has zero length. It will be skipped.");
         }
     }
-    else    {
+    else {
         // apply a default material
         aiColor3D clr;
         clr.b = clr.g = clr.r = 0.6f;
