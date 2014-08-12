@@ -3,13 +3,40 @@ PROJECT( Assimp )
 
 # Define here the needed parameters
 set (ASSIMP_VERSION_MAJOR 3)
-set (ASSIMP_VERSION_MINOR 0)
+set (ASSIMP_VERSION_MINOR 1)
 set (ASSIMP_VERSION_PATCH 1) # subversion revision?
 set (ASSIMP_VERSION ${ASSIMP_VERSION_MAJOR}.${ASSIMP_VERSION_MINOR}.${ASSIMP_VERSION_PATCH})
 set (ASSIMP_SOVERSION 3)
-SET ( PROJECT_VERSION "${ASSIMP_VERSION}" )
+set (PROJECT_VERSION "${ASSIMP_VERSION}")
 
 set(ASSIMP_PACKAGE_VERSION "0" CACHE STRING "the package-specific version used for uploading the sources")
+
+# Get the current working branch
+execute_process(
+  COMMAND git rev-parse --abbrev-ref HEAD
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_BRANCH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Get the latest abbreviated commit hash of the working branch
+execute_process(
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_COMMIT_HASH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(NOT GIT_COMMIT_HASH)
+  set(GIT_COMMIT_HASH 0)
+endif(NOT GIT_COMMIT_HASH)
+
+configure_file(
+  ${CMAKE_SOURCE_DIR}/revision.h.in
+  ${CMAKE_BINARY_DIR}/revision.h
+)
+
+include_directories(${CMAKE_BINARY_DIR})
 
 option(ASSIMP_OPT_BUILD_PACKAGES "Set to ON to generate CPack configuration files and packaging targets" OFF)
 set(CMAKE_MODULE_PATH       "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules" )
@@ -18,7 +45,7 @@ set(LIBASSIMP-DEV_COMPONENT "libassimp${ASSIMP_VERSION_MAJOR}.${ASSIMP_VERSION_M
 set(CPACK_COMPONENTS_ALL assimp-bin ${LIBASSIMP_COMPONENT} ${LIBASSIMP-DEV_COMPONENT} assimp-dev)
 set(ASSIMP_LIBRARY_SUFFIX "" CACHE STRING "Suffix to append to library names")
 
-if( CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX AND NOT MINGW )
+if((CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX) AND NOT CMAKE_COMPILER_IS_MINGW)
   add_definitions(-fPIC) # this is a very important switch and some libraries seem now to have it....
   # hide all not-exported symbols
   add_definitions( -fvisibility=hidden -Wall )
@@ -49,22 +76,22 @@ SET( ASSIMP_INCLUDE_INSTALL_DIR "include" CACHE PATH
 	"Path the header files are installed to." )
 SET( ASSIMP_BIN_INSTALL_DIR "bin" CACHE PATH
 	"Path the tool executables are installed to." )
+SET ( ASSIMP_BUILD_STATIC_LIB OFF CACHE BOOL
+    "Build a static (.a) version of the library" )
 
 SET(ASSIMP_DEBUG_POSTFIX "d" CACHE STRING "Debug Postfitx for lib, samples and tools")
 
 # Allow the user to build a static library
-SET ( ASSIMP_BUILD_STATIC_LIB OFF CACHE BOOL
-	"Build a static (.a) version of the library"
-)
+option ( BUILD_SHARED_LIBS "Build a shared version of the library" ON )
+IF ( ASSIMP_BUILD_STATIC_LIB )
+    option ( BUILD_SHARED_LIBS "Build a shared version of the library" OFF )
+ELSE ( ASSIMP_BUILD_STATIC_LIB )
+    option ( BUILD_SHARED_LIBS "Build a shared version of the library" ON )
+ENDIF ( ASSIMP_BUILD_STATIC_LIB )
 
 # Generate a pkg-config .pc for the Assimp library.
 CONFIGURE_FILE( "${PROJECT_SOURCE_DIR}/assimp.pc.in" "${PROJECT_BINARY_DIR}/assimp.pc" @ONLY )
 INSTALL( FILES "${PROJECT_BINARY_DIR}/assimp.pc" DESTINATION ${ASSIMP_LIB_INSTALL_DIR}/pkgconfig/ COMPONENT ${LIBASSIMP-DEV_COMPONENT})
-
-# cmake configuration files
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/assimp-config.cmake.in"         "${CMAKE_CURRENT_BINARY_DIR}/assimp-config.cmake" @ONLY IMMEDIATE)
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/assimp-config-version.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/assimp-config-version.cmake" @ONLY IMMEDIATE)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/assimp-config.cmake"             "${CMAKE_CURRENT_BINARY_DIR}/assimp-config-version.cmake" DESTINATION "${ASSIMP_LIB_INSTALL_DIR}/cmake/assimp-${ASSIMP_VERSION_MAJOR}.${ASSIMP_VERSION_MINOR}" COMPONENT ${LIBASSIMP-DEV_COMPONENT})
 
 # Only generate this target if no higher-level project already has
 IF (NOT TARGET uninstall)
@@ -84,7 +111,7 @@ IF ( ASSIMP_ENABLE_BOOST_WORKAROUND )
 	MESSAGE( STATUS "Building a non-boost version of Assimp." )
 ELSE ( ASSIMP_ENABLE_BOOST_WORKAROUND )
 	SET( Boost_DETAILED_FAILURE_MSG ON )
-	SET( Boost_ADDITIONAL_VERSIONS "1.47" "1.47.0" "1.48.0" "1.48" "1.49" "1.49.0" "1.50" "1.50.0" "1.51" "1.51.0" "1.52.0" "1.53.0" "1.54.0")	
+	SET( Boost_ADDITIONAL_VERSIONS "1.47" "1.47.0" "1.48.0" "1.48" "1.49" "1.49.0" "1.50" "1.50.0" "1.51" "1.51.0" "1.52.0" "1.53.0" "1.54.0" "1.55" )	
 	FIND_PACKAGE( Boost )
 	IF ( NOT Boost_FOUND )
 		MESSAGE( FATAL_ERROR
@@ -97,6 +124,10 @@ ELSE ( ASSIMP_ENABLE_BOOST_WORKAROUND )
 	INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 ENDIF ( ASSIMP_ENABLE_BOOST_WORKAROUND )
 
+# cmake configuration files
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/assimp-config.cmake.in"         "${CMAKE_CURRENT_BINARY_DIR}/assimp-config.cmake" @ONLY IMMEDIATE)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/assimp-config-version.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/assimp-config-version.cmake" @ONLY IMMEDIATE)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/assimp-config.cmake"             "${CMAKE_CURRENT_BINARY_DIR}/assimp-config-version.cmake" DESTINATION "${ASSIMP_LIB_INSTALL_DIR}/cmake/assimp-${ASSIMP_VERSION_MAJOR}.${ASSIMP_VERSION_MINOR}" COMPONENT ${LIBASSIMP-DEV_COMPONENT})
 
 SET ( ASSIMP_NO_EXPORT OFF CACHE BOOL
 	"Disable Assimp's export functionality." 
@@ -177,7 +208,7 @@ IF ( ASSIMP_BUILD_SAMPLES)
 ENDIF ( ASSIMP_BUILD_SAMPLES )
 
 IF ( WIN32 )
-	SET ( ASSIMP_BUILD_TESTS OFF CACHE BOOL
+	SET ( ASSIMP_BUILD_TESTS ON CACHE BOOL
 		"If the test suite for Assimp is built in addition to the library."
 	)
 	
