@@ -26,6 +26,7 @@ cmake_uninstall.cmake
 *.dir/
 assimp-config.cmake
 assimp-config-version.cmake
+install_manifest.txt
 
 # Generated Makefiles
 Makefile

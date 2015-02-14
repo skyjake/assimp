@@ -4,7 +4,7 @@
 # 3) Add libassimp using the file lists (eliminates duplication of file names between
 #    source groups and library command)
 #
-cmake_minimum_required( VERSION 2.6 )
+cmake_minimum_required( VERSION 2.8.12 )
 SET( HEADER_PATH ../include/assimp )
 
 SET( COMPILER_HEADERS
@@ -701,6 +701,7 @@ SET( assimp_src
 ADD_LIBRARY( assimp ${assimp_src} )
 
 SET_PROPERTY(TARGET assimp PROPERTY DEBUG_POSTFIX ${ASSIMP_DEBUG_POSTFIX})
+SET_PROPERTY(TARGET assimp PROPERTY MACOSX_RPATH ON)
 
 TARGET_LINK_LIBRARIES(assimp ${ZLIB_LIBRARIES})
 SET_TARGET_PROPERTIES( assimp PROPERTIES
@@ -708,10 +709,6 @@ SET_TARGET_PROPERTIES( assimp PROPERTIES
 	SOVERSION ${ASSIMP_SOVERSION} # use full version 
     OUTPUT_NAME assimp${ASSIMP_LIBRARY_SUFFIX}
 )
-
-if (APPLE)
-    SET_TARGET_PROPERTIES( assimp PROPERTIES INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/${LIB_INSTALL_DIR}")
-endif()
 
 # Build against external unzip, or add ../contrib/unzip so
 # assimp can #include "unzip.h"
