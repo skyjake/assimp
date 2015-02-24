@@ -11,6 +11,8 @@ build
 bin/
 lib/
 contrib/
+code/*.dylib
+tools/assimp_cmd/assimp
 
 # Generated
 assimp.pc
