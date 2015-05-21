@@ -6,10 +6,14 @@ build
 *.sln
 *.ncb
 *.vcproj
+*.vcxproj*
+*.sdf
+*.suo
 
 # Output
 bin/
 lib/
+Win32/
 contrib/
 code/*.dylib
 tools/assimp_cmd/assimp
