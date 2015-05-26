@@ -108,7 +108,12 @@ protected:
 	// -------------------------------------------------------------------
 	/** Load a *.MD5ANIM file.
 	 */
-	void LoadMD5AnimFile ();
+	void LoadMD5AnimFile (const std::string& fileNameSuffix = "");
+
+	// -------------------------------------------------------------------
+	/** Load *.MD5ANIM files as configured.
+	 */
+	void LoadConfiguredMD5AnimFiles ();
 
 	// -------------------------------------------------------------------
 	/** Load a *.MD5CAMERA file.
@@ -148,6 +153,8 @@ protected:
 	*/
 	void LoadFileIntoMemory (IOStream* pFile);
 	void UnloadFileFromMemory ();
+	
+	static std::string AppendFileSuffix (const std::string& nameWithDot, const std::string& suffix);
 
 
 	/** IOSystem to be used to access files */
@@ -183,6 +190,11 @@ protected:
 
 	/** configuration option: prevent anim autoload */
 	bool configNoAutoLoad;
+	
+	/** configuration option: names of anim suffixes */
+	std::string configAnimSeqs;
+	
+	std::vector<aiAnimation *> mAnimations;
 };
 
 } // end of namespace Assimp

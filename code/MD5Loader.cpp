@@ -115,6 +115,8 @@ void MD5Importer::SetupProperties(const Importer* pImp)
 {
 	// AI_CONFIG_IMPORT_MD5_NO_ANIM_AUTOLOAD
 	configNoAutoLoad = (0 !=  pImp->GetPropertyInteger(AI_CONFIG_IMPORT_MD5_NO_ANIM_AUTOLOAD,0));
+    
+    configAnimSeqs = pImp->GetPropertyString(AI_CONFIG_IMPORT_MD5_ANIM_SEQUENCE_NAMES);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -149,7 +151,7 @@ void MD5Importer::InternReadFile( const std::string& pFile,
 		}
 		else {
 			LoadMD5MeshFile();
-			LoadMD5AnimFile();
+			LoadConfiguredMD5AnimFiles();
 		}
 	}
 	catch ( ... ) { // std::exception, Assimp::DeadlyImportError
@@ -543,6 +545,10 @@ void MD5Importer::LoadMD5MeshFile ()
 			temp.Append("_h.tga");
 			mat->AddProperty(&temp,AI_MATKEY_TEXTURE_HEIGHT(0));
 
+			temp =  aiString(meshSrc.mShader);
+			temp.Append("_e.tga");
+			mat->AddProperty(&temp,AI_MATKEY_TEXTURE_EMISSIVE(0));
+
 			// set this also as material name
 			mat->AddProperty(&meshSrc.mShader,AI_MATKEY_NAME);
 		}
@@ -552,11 +558,38 @@ void MD5Importer::LoadMD5MeshFile ()
 #endif
 }
 
+static void SplitString(const std::string& s, char delim, std::vector<std::string>& elems)
+{
+	std::stringstream str(s);
+	std::string item;
+	while (std::getline(str, item, delim)) {
+		elems.push_back(item);
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// Load all MD5ANIM files listed in the configuration property
+void MD5Importer::LoadConfiguredMD5AnimFiles ()
+{
+	typedef std::vector<std::string> Seqs;
+
+	Seqs seqs;
+	SplitString(configAnimSeqs, ';', seqs);
+	if(seqs.empty()) {
+		LoadMD5AnimFile();
+	}
+	else {
+		for (Seqs::const_iterator i = seqs.begin(); i != seqs.end(); ++i) {
+			LoadMD5AnimFile(*i);
+		}
+	}
+}
+
 // ------------------------------------------------------------------------------------------------
 // Load an MD5ANIM file
-void MD5Importer::LoadMD5AnimFile ()
+void MD5Importer::LoadMD5AnimFile (const std::string& fileNameSuffix /* = "" */)
 {
-	std::string pFile = mFile + "md5anim";
+	std::string pFile = AppendFileSuffix(mFile, fileNameSuffix) + "md5anim";
 	boost::scoped_ptr<IOStream> file( pIOHandler->Open( pFile, "rb"));
 
 	// Check whether we can read from the file
@@ -580,9 +613,19 @@ void MD5Importer::LoadMD5AnimFile ()
 	}
 	else {
 		bHadMD5Anim = true;
-
-		pScene->mAnimations = new aiAnimation*[pScene->mNumAnimations = 1];
-		aiAnimation* anim = pScene->mAnimations[0] = new aiAnimation();
+		
+		aiAnimation *anim = new aiAnimation();
+		anim->mName.Set(fileNameSuffix); // omit the underscore prefix
+		mAnimations.push_back(anim);
+		
+		// Add the new animation to the scene and make a copy of the array of pointers.
+		pScene->mNumAnimations = mAnimations.size();
+		delete[] pScene->mAnimations; 
+		pScene->mAnimations = new aiAnimation*[pScene->mNumAnimations];
+		for(unsigned i = 0; i < mAnimations.size(); ++i) {
+			pScene->mAnimations[i] = mAnimations[i];
+		}
+		
 		anim->mNumChannels = (unsigned int)animParser.mAnimatedBones.size();
 		anim->mChannels = new aiNodeAnim*[anim->mNumChannels];
 		for (unsigned int i = 0; i < anim->mNumChannels;++i)	{
@@ -743,6 +786,14 @@ void MD5Importer::LoadMD5CameraFile ()
 			nd->mRotationKeys[i].mTime = nd->mPositionKeys[i].mTime = *it+i;
 		}
 	}
+}
+
+std::string MD5Importer::AppendFileSuffix (const std::string& nameWithDot, const std::string& suffix) // static
+{
+	if(suffix.empty()) {
+		return nameWithDot;
+	}
+	return nameWithDot.substr(0, nameWithDot.size() - 1) + "_" + suffix + ".";
 }
 
 #endif // !! ASSIMP_BUILD_NO_MD5_IMPORTER
