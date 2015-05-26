@@ -770,6 +770,18 @@ enum aiComponent
     "IMPORT_MD5_NO_ANIM_AUTOLOAD"
 
 // ---------------------------------------------------------------------------
+/** @brief  List semicolon separated animation sequence names.
+ * 
+ * When loading animations, look for MD5ANIM files that have the name
+ * (md5basename)_(sequence).md5anim. Each sequence name on the list is searched
+ * for in order and loaded as a separate animation.        
+ * 
+ * * Property type: String. Default value: n/a.
+ */
+#define AI_CONFIG_IMPORT_MD5_ANIM_SEQUENCE_NAMES            \
+    "IMPORT_MD5_ANIM_SEQUENCE_NAMES"
+
+// ---------------------------------------------------------------------------
 /** @brief Defines the begin of the time range for which the LWS loader
  *    evaluates animations and computes aiNodeAnim's.
  *
@@ -849,7 +861,6 @@ enum aiComponent
   * manager pointer.
   */
  #define AI_CONFIG_ANDROID_JNI_ASSIMP_MANAGER_SUPPORT "AI_CONFIG_ANDROID_JNI_ASSIMP_MANAGER_SUPPORT"
-
 
 // ---------------------------------------------------------------------------
 /** @brief Specifies whether the IFC loader skips over
