@@ -14,7 +14,7 @@ set(ASSIMP_PACKAGE_VERSION "0" CACHE STRING "the package-specific version used f
 # Get the current working branch
 execute_process(
   COMMAND git rev-parse --abbrev-ref HEAD
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   OUTPUT_VARIABLE GIT_BRANCH
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
@@ -22,7 +22,7 @@ execute_process(
 # Get the latest abbreviated commit hash of the working branch
 execute_process(
   COMMAND git log -1 --format=%h
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   OUTPUT_VARIABLE GIT_COMMIT_HASH
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
@@ -32,11 +32,11 @@ if(NOT GIT_COMMIT_HASH)
 endif(NOT GIT_COMMIT_HASH)
 
 configure_file(
-  ${CMAKE_SOURCE_DIR}/revision.h.in
-  ${CMAKE_BINARY_DIR}/revision.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/revision.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/revision.h
 )
 
-include_directories(${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 option(ASSIMP_OPT_BUILD_PACKAGES "Set to ON to generate CPack configuration files and packaging targets" OFF)
 set(CMAKE_MODULE_PATH       "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules" )
@@ -63,11 +63,11 @@ INCLUDE (PrecompiledHeader)
 # write the library/executable files to the respective directories in the
 # source tree. During an out-of-source build, however, do not litter this
 # directory, since that is probably what the user wanted to avoid.
-IF ( CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR )
-	SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_HOME_DIRECTORY}/lib" )
-	SET( CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_HOME_DIRECTORY}/lib" )
-	SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_HOME_DIRECTORY}/bin" )
-ENDIF ( CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR )
+IF ( CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR )
+	SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib" )
+	SET( CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib" )
+	SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin" )
+ENDIF ()
 
 # Cache these to allow the user to override them manually.
 SET( ASSIMP_LIB_INSTALL_DIR "lib" CACHE PATH
