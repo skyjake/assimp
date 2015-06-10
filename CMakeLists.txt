@@ -53,6 +53,11 @@ elseif(MSVC)
   add_definitions(/MP)
 endif()
 
+if (CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+    add_definitions( -Wno-unused-function -Wno-unused-private-field -Wno-missing-braces 
+                     -Wno-unused-variable -Wno-reorder )
+endif()
+
 INCLUDE (FindPkgConfig)
 INCLUDE_DIRECTORIES( include )
 
