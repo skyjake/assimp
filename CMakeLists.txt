@@ -95,7 +95,6 @@ OPTION(ASSIMP_OPT_BUILD_PACKAGES "Set to ON to generate CPack configuration file
 SET(CMAKE_MODULE_PATH       "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules" )
 SET(LIBASSIMP_COMPONENT     "libassimp${ASSIMP_VERSION_MAJOR}.${ASSIMP_VERSION_MINOR}.${ASSIMP_VERSION_PATCH}" )
 SET(LIBASSIMP-DEV_COMPONENT "libassimp${ASSIMP_VERSION_MAJOR}.${ASSIMP_VERSION_MINOR}.${ASSIMP_VERSION_PATCH}-dev" )
-SET(CPACK_COMPONENTS_ALL assimp-bin ${LIBASSIMP_COMPONENT} ${LIBASSIMP-DEV_COMPONENT} assimp-dev)
 SET(ASSIMP_LIBRARY_SUFFIX "" CACHE STRING "Suffix to append to library names")
 
 OPTION(ASSIMP_ANDROID_JNIIOSYSTEM "Android JNI IOSystem support is active" OFF)
@@ -108,6 +107,7 @@ ENDIF()
 IF((CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX) AND NOT CMAKE_COMPILER_IS_MINGW)
   IF (BUILD_SHARED_LIBS AND CMAKE_SIZEOF_VOID_P EQUAL 8) # -fPIC is only required for shared libs on 64 bit
      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")  
   ENDIF()
   # hide all not-exported symbols
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -Wall -std=c++0x" )
@@ -129,11 +129,11 @@ INCLUDE (PrecompiledHeader)
 # write the library/executable files to the respective directories in the
 # source tree. During an out-of-source build, however, do not litter this
 # directory, since that is probably what the user wanted to avoid.
-IF ( CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR )
-  SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_HOME_DIRECTORY}/lib" )
-  SET( CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_HOME_DIRECTORY}/lib" )
-  SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_HOME_DIRECTORY}/bin" )
-ENDIF ( CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR )
+IF ( CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR )
+  SET( CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib" )
+  SET( CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib" )
+  SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin" )
+ENDIF ()
 
 # Cache these to allow the user to override them manually.
 SET( ASSIMP_LIB_INSTALL_DIR "lib" CACHE PATH
@@ -143,11 +143,11 @@ SET( ASSIMP_INCLUDE_INSTALL_DIR "include" CACHE PATH
 SET( ASSIMP_BIN_INSTALL_DIR "bin" CACHE PATH
   "Path the tool executables are installed to." )
 
-IF (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  SET(CMAKE_DEBUG_POSTFIX "d" CACHE STRING "Debug Postfix for lib, samples and tools")
-ELSE()
-  SET(CMAKE_DEBUG_POSTFIX "" CACHE STRING "Debug Postfix for lib, samples and tools")
-ENDIF()
+# IF (CMAKE_BUILD_TYPE STREQUAL "Debug")
+#   SET(CMAKE_DEBUG_POSTFIX "d" CACHE STRING "Debug Postfix for lib, samples and tools")
+# ELSE()
+#   SET(CMAKE_DEBUG_POSTFIX "" CACHE STRING "Debug Postfix for lib, samples and tools")
+# ENDIF()
 
 # Only generate this target if no higher-level project already has
 IF (NOT TARGET uninstall)
@@ -326,6 +326,8 @@ CONFIGURE_FILE( "${PROJECT_SOURCE_DIR}/assimp.pc.in" "${PROJECT_BINARY_DIR}/assi
 INSTALL( FILES "${PROJECT_BINARY_DIR}/assimp.pc" DESTINATION ${ASSIMP_LIB_INSTALL_DIR}/pkgconfig/ COMPONENT ${LIBASSIMP-DEV_COMPONENT})
 
 IF(CMAKE_CPACK_COMMAND AND UNIX AND ASSIMP_OPT_BUILD_PACKAGES)
+  set(CPACK_COMPONENTS_ALL assimp-bin ${LIBASSIMP_COMPONENT} ${LIBASSIMP-DEV_COMPONENT} assimp-dev)
+    
   # Packing information
   SET(CPACK_PACKAGE_NAME                    "assimp{ASSIMP_VERSION_MAJOR}")
   SET(CPACK_PACKAGE_CONTACT "" CACHE STRING "Package maintainer and PGP signer.")
