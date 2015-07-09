@@ -52,6 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "../include/assimp/types.h"
 struct aiNode;
 struct aiNodeAnim;
+struct aiAnimation;
 
 namespace Assimp    {
 
