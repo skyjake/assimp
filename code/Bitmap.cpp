@@ -83,7 +83,7 @@ namespace Assimp {
     }
 
     template<typename T>
-    inline std::size_t Copy(uint8_t* data, T& field) {
+    inline std::size_t Copy(uint8_t* data, const T &field) {
         std::memcpy(data, &AI_BE(field), sizeof(field)); return sizeof(field);
     }
 
